@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File Upload</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+
+    .upload-container {
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+
+    .upload-container h2 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    form {
+      margin-bottom: 20px;
+    }
+
+    input[type="file"] {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+      width: calc(100% - 22px);
+      box-sizing: border-box;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      background-color: #007bff;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .img-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .img-container img {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="upload-container">
+    <h2>Upload Your File</h2>
+
+    <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+      <input type="file" id="fileInput" name="file" accept="image/*" required>
+      <br>
+      <button type="submit">Upload</button>
+    </form>
+  </div>
+  <div class="img-container" id="imgContainer">
+    <!-- Images will be displayed here -->
+  </div>
+
+  <script>
+    const form = document.getElementById('uploadForm');
+    const imgContainer = document.getElementById('imgContainer');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fileInput = document.getElementById('fileInput').files[0];
+      const reader = new FileReader();
+
+      reader.readAsDataURL(fileInput);
+      reader.onloadend = async () => {
+        const base64String = reader.result.split(',')[1];
+        await uploadFile(base64String);
+        displayImages(); // Update the displayed images
+      };
+    });
+
+    async function uploadFile(base64String) {
+      const response = await fetch('/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64String })
+      });
+
+      // Handle response here (optional)
+    }
+
+    async function displayImages() {
+      const response = await fetch('/images');
+      const { images } = await response.json();
+     
+      // Clear existing images
+      imgContainer.innerHTML = '';
+    
+      images.forEach(img => {
+        // Check if img is an object and has a property 'image' with Base64 data
+        if (img && typeof img === 'object' && img.image) {
+          const imgElement = document.createElement('img');
+          imgElement.src = `data:image/jpeg;base64,${img.image}`; // Adjust MIME type if needed
+          imgElement.alt = 'Uploaded Image';
+          imgContainer.appendChild(imgElement);
+        } else {
+          console.error('Invalid image data:', img);
+        }
+      });
+    }
+    
+    // Initial load of images
+    displayImages();
+  </script>
+</body>
+</html>
